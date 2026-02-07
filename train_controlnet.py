@@ -241,12 +241,7 @@ def main():
     else:
         # Use original embeddings [768] for linear and repeat strategies
         embedding_dim = "original"
-        # Try to find original embeddings path
-        if "expanded" in args.graph_embeddings:
-            embeddings_path = args.graph_embeddings.replace("expanded", "768")
-        else:
-            # Fallback: assume it exists as new_embeddings_768.pkl
-            embeddings_path = args.graph_embeddings.replace(".h5", "_768.pkl")
+        embeddings_path = args.graph_embeddings
         accelerator.print(f"  Using original embeddings: {embeddings_path}")
     
     # Create dataloaders

@@ -193,7 +193,7 @@ if __name__ == "__main__":
     # Create graphs
 
     #Block 1 - Load graphs and training the embedder
-    graphs = pickle.load(open("reports_processed_graphs.pkl", "rb"))
+    graphs = pickle.load(open("reports_processed_2_graphs.pkl", "rb"))
     
     # Initialize and train
     embedder = SimpleGraph2VecEmbedder(dimensions=768, wl_iterations=2, epochs=10)
@@ -202,11 +202,11 @@ if __name__ == "__main__":
     
     
     
-    # Block 2 - Load trained embedder and get training embeddings
-    graphs = pickle.load(open("reports_processed_graphs.pkl", "rb"))
+    # new_embeBlock 2 - Load trained embedder and get training embeddings
+    graphs = pickle.load(open("reports_processed_2_graphs.pkl", "rb"))
     embedder = pickle.load(open("graph2vec_embeddings.pkl", "rb"))
    
-    new_embeddings = embedder.encode(graphs)
+    ddings = embedder.encode(graphs)
     pickle.dump(new_embeddings, open("new_embeddings_768.pkl", "wb"))
     
     

@@ -177,88 +177,88 @@ class MedicalGraphManager:
             ]
         }
 
+if __name__ == "__main__":
+    graphs = pickle.load(open('reports_processed_graphs.pkl', 'rb'))
 
-graphs = pickle.load(open('reports_processed_graphs.pkl', 'rb'))
+    # Initialize manager
+    manager = MedicalGraphManager(graphs)
 
-# Initialize manager
-manager = MedicalGraphManager(graphs)
+    # Display summary
+    print("\n1. AGGREGATE SUMMARY")
+    print("-" * 70)
+    summary = manager.summary()
+    print(f"Number of graphs: {summary['num_graphs']}")
+    print(f"Total unique nodes: {summary['total_nodes']}")
+    print(f"Total unique edges: {summary['total_edges']}")
+    print("\nPer-graph details:")
 
-# Display summary
-print("\n1. AGGREGATE SUMMARY")
-print("-" * 70)
-summary = manager.summary()
-print(f"Number of graphs: {summary['num_graphs']}")
-print(f"Total unique nodes: {summary['total_nodes']}")
-print(f"Total unique edges: {summary['total_edges']}")
-print("\nPer-graph details:")
+    #for i, detail in enumerate(summary['graphs_detail']):
+    #    print(f"  Graph {i}: {detail['nodes']} nodes, {detail['edges']} edges, density: {detail['density']:.3f}")
 
-#for i, detail in enumerate(summary['graphs_detail']):
-#    print(f"  Graph {i}: {detail['nodes']} nodes, {detail['edges']} edges, density: {detail['density']:.3f}")
+    # Display all nodes and edges
+    print("\n2. ALL AGGREGATED NODES")
+    print("-" * 70)
+    all_nodes = manager.get_all_nodes()
+    #for node in sorted(all_nodes):
+    #    print(f"  • {node}")
 
-# Display all nodes and edges
-print("\n2. ALL AGGREGATED NODES")
-print("-" * 70)
-all_nodes = manager.get_all_nodes()
-#for node in sorted(all_nodes):
-#    print(f"  • {node}")
+    print("\n3. ALL AGGREGATED EDGES")
+    print("-" * 70)
+    all_edges = manager.get_all_edges()
+    #for source, target in sorted(all_edges):
+    #    print(f"  • {source} → {target}")
 
-print("\n3. ALL AGGREGATED EDGES")
-print("-" * 70)
-all_edges = manager.get_all_edges()
-#for source, target in sorted(all_edges):
-#    print(f"  • {source} → {target}")
+    # Get node attributes across graphs
+    print("\n4. NODE ATTRIBUTES ACROSS GRAPHS")
+    print("-" * 70)
+    attrs = manager.get_node_attributes('zone')
+    print(f"Attribute found in graphs: {list(attrs.keys())}")
+    #for graph_key, attr in attrs.items():
+    #    print(f"  {graph_key}: {attr}")
 
-# Get node attributes across graphs
-print("\n4. NODE ATTRIBUTES ACROSS GRAPHS")
-print("-" * 70)
-attrs = manager.get_node_attributes('zone')
-print(f"Attribute found in graphs: {list(attrs.keys())}")
-#for graph_key, attr in attrs.items():
-#    print(f"  {graph_key}: {attr}")
-
-# Get edge attributes
-print("\n5. EDGE ATTRIBUTES ACROSS GRAPHS")
-print("-" * 70)
-edge_attrs = manager.get_edge_attributes('zone', 'tube')
-#print(f"Edge found in graphs: {list(edge_attrs.keys())}")
-#for graph_key, attrs in edge_attrs.items():
-#    print(f"  {graph_key}: {attrs}")
+    # Get edge attributes
+    print("\n5. EDGE ATTRIBUTES ACROSS GRAPHS")
+    print("-" * 70)
+    edge_attrs = manager.get_edge_attributes('zone', 'tube')
+    #print(f"Edge found in graphs: {list(edge_attrs.keys())}")
+    #for graph_key, attrs in edge_attrs.items():
+    #    print(f"  {graph_key}: {attrs}")
 
 
-# EDIT GRAPH 0 (Diabetes graph)
-print("\n6. EDITING GRAPH 0 ")
-print("-" * 70)
-print("Original nodes:", list(graphs[222162].nodes()))
-print("Original edges:", list(graphs[222162].edges()))
+    # EDIT GRAPH 0 (Diabetes graph)
+    print("\n6. EDITING GRAPH 0 ")
+    print("-" * 70)
+    print("Original nodes:", list(graphs[222162].nodes()))
+    print("Original edges:", list(graphs[222162].edges()))
 
-# Create modified graph
-edited_graph = manager.edit_instance(
-    graph_index=222162,
-    add_nodes=[
-        ('Neuropathy', {'type': 'symptom', 'severity': 'medium'}),
-        ('Metformin', {'type': 'treatment', 'category': 'drug'})
-    ],
-    add_edges=[
-        ('Diabetes', 'Neuropathy', {'relation': 'causes'}),
-        ('Metformin', 'Diabetes', {'relation': 'manages'})
-    ],
-    remove_nodes=['zone'],
-    remove_edges=[('zone', 'lung')]
-)
+    # Create modified graph
+    edited_graph = manager.edit_instance(
+        graph_index=222162,
+        add_nodes=[
+            ('Neuropathy', {'type': 'symptom', 'severity': 'medium'}),
+            ('Metformin', {'type': 'treatment', 'category': 'drug'})
+        ],
+        add_edges=[
+            ('Diabetes', 'Neuropathy', {'relation': 'causes'}),
+            ('Metformin', 'Diabetes', {'relation': 'manages'})
+        ],
+        remove_nodes=['zone'],
+        remove_edges=[('zone', 'lung')]
+    )
 
-print("\nModified nodes:", list(edited_graph.nodes()))
-print("Modified edges:", list(edited_graph.edges()))
+    print("\nModified nodes:", list(edited_graph.nodes()))
+    print("Modified edges:", list(edited_graph.edges()))
 
-# Display the modified graph structure
-print("\n7. MODIFIED GRAPH STRUCTURE")
-print("-" * 70)
-print(f"Nodes in edited graph: {len(edited_graph.nodes())}")
-print(f"Edges in edited graph: {len(edited_graph.edges())}")
-for node in edited_graph.nodes():
-    attrs = dict(edited_graph.nodes[node])
-    print(f"  • {node}: {attrs}")
+    # Display the modified graph structure
+    print("\n7. MODIFIED GRAPH STRUCTURE")
+    print("-" * 70)
+    print(f"Nodes in edited graph: {len(edited_graph.nodes())}")
+    print(f"Edges in edited graph: {len(edited_graph.edges())}")
+    for node in edited_graph.nodes():
+        attrs = dict(edited_graph.nodes[node])
+        print(f"  • {node}: {attrs}")
 
-print("\nEdges in modified graph:")
-for source, target in edited_graph.edges():
-    attrs = dict(edited_graph.edges[source, target])
-    print(f"  • {source} → {target}: {attrs}")
+    print("\nEdges in modified graph:")
+    for source, target in edited_graph.edges():
+        attrs = dict(edited_graph.edges[source, target])
+        print(f"  • {source} → {target}: {attrs}")

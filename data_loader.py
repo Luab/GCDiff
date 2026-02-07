@@ -10,7 +10,8 @@ Direct 1:1 mapping: CSV row index → HDF5 embedding index
 """
 
 import os
-from typing import Dict, Optional
+import json
+from typing import Dict, Optional, List
 import pandas as pd
 import numpy as np
 import torch
@@ -33,6 +34,9 @@ class CheXpertGraphDataset(Dataset):
         text_field: Column to use for text prompts ("section_impression" or "section_findings")
         max_samples: Optional limit on dataset size (for testing)
         embedding_dim: "expanded" for [128, 768] or "original" for [768]
+        load_graphs: If True, load original NetworkX graphs for counterfactual evaluation
+        graphs_path: Path to pickle file containing graphs (used when load_graphs=True)
+        labels_path: Path to JSON file with ground truth pathology labels (one JSON per line)
     """
     
     def __init__(
@@ -45,6 +49,9 @@ class CheXpertGraphDataset(Dataset):
         text_field: str = "section_impression",
         max_samples: Optional[int] = None,
         embedding_dim: str = "expanded",
+        load_graphs: bool = False,
+        graphs_path: str = "/mnt/data/diffusion_graph/reports_processed_graphs.pkl",
+        labels_path: Optional[str] = None,
     ):
         super().__init__()
         
@@ -94,6 +101,21 @@ class CheXpertGraphDataset(Dataset):
             print(f"  Pickle loaded: {self.embeddings.shape}")
             self.embeddings_file = None  # No file handle to close
         
+        # Load graphs if requested (for counterfactual evaluation)
+        self.graphs = None
+        if load_graphs:
+            import pickle
+            print(f"  Loading graphs: {graphs_path}")
+            self.graphs = pickle.load(open(graphs_path, 'rb'))
+            print(f"  Loaded {len(self.graphs)} graphs")
+        
+        # Load labels if provided (for counterfactual direction inference)
+        self.labels = None
+        if labels_path:
+            print(f"  Loading labels: {labels_path}")
+            self.labels = self._load_labels(labels_path)
+            print(f"  Loaded labels for {len(self.labels)} samples")
+        
         # Store configuration
         self.image_root = image_root
         self.text_field = text_field
@@ -113,6 +135,22 @@ class CheXpertGraphDataset(Dataset):
     def __len__(self) -> int:
         return len(self.df)
     
+    def _load_labels(self, labels_path: str) -> List[Dict]:
+        """
+        Load pathology labels from JSON file (one JSON object per line).
+        
+        Args:
+            labels_path: Path to JSON file with labels
+            
+        Returns:
+            List of label dictionaries indexed by original CSV row
+        """
+        labels = []
+        with open(labels_path, 'r') as f:
+            for line in f:
+                labels.append(json.loads(line.strip()))
+        return labels
+    
     def __getitem__(self, idx: int) -> Dict:
         """
         Returns a sample with image, graph embedding, and text prompt.
@@ -124,7 +162,9 @@ class CheXpertGraphDataset(Dataset):
                 'text_prompt': str,
                 'patient_id': str,
                 'image_path': str,
-                'original_idx': int (for debugging HDF5 alignment)
+                'original_idx': int (for debugging HDF5 alignment),
+                'graph': nx.DiGraph (only if load_graphs=True),
+                'labels': dict (only if labels_path provided) - pathology -> value
             }
         """
         row = self.df.iloc[idx]
@@ -168,7 +208,7 @@ class CheXpertGraphDataset(Dataset):
         # Clean text prompt (remove excessive whitespace, newlines)
         text_prompt = ' '.join(str(text_prompt).split())
         
-        return {
+        result = {
             'image': image_tensor,  # [3, 512, 512] in [-1, 1]
             'graph_embedding': graph_embedding,  # [128, 768]
             'text_prompt': text_prompt,  # str
@@ -176,10 +216,20 @@ class CheXpertGraphDataset(Dataset):
             'image_path': row['path_to_image'],
             'original_idx': original_idx,
         }
+        
+        # Include original graph if loaded (for counterfactual evaluation)
+        if self.graphs is not None:
+            result['graph'] = self.graphs[original_idx]
+        
+        # Include labels if loaded (for counterfactual direction inference)
+        if self.labels is not None:
+            result['labels'] = self.labels[original_idx]
+        
+        return result
     
     def __del__(self):
         """Close HDF5 file handle on cleanup."""
-        if hasattr(self, 'embeddings_file'):
+        if hasattr(self, 'embeddings_file') and self.embeddings_file is not None:
             self.embeddings_file.close()
 
 
@@ -193,6 +243,9 @@ def get_dataloaders(
     text_field: str = "section_impression",
     max_samples: Optional[int] = None,
     embedding_dim: str = "expanded",
+    load_graphs: bool = False,
+    graphs_path: str = "/mnt/data/diffusion_graph/reports_processed_graphs.pkl",
+    labels_path: Optional[str] = None,
 ):
     """
     Create train and validation dataloaders.
@@ -207,6 +260,9 @@ def get_dataloaders(
         text_field: Text field to use for prompts
         max_samples: Optional limit on dataset size (for testing)
         embedding_dim: "expanded" for [128, 768] or "original" for [768]
+        load_graphs: If True, load original NetworkX graphs for counterfactual evaluation
+        graphs_path: Path to pickle file containing graphs (used when load_graphs=True)
+        labels_path: Path to JSON file with ground truth pathology labels
     
     Returns:
         tuple: (train_loader, val_loader)
@@ -223,6 +279,9 @@ def get_dataloaders(
         text_field=text_field,
         max_samples=max_samples,
         embedding_dim=embedding_dim,
+        load_graphs=load_graphs,
+        graphs_path=graphs_path,
+        labels_path=labels_path,
     )
     
     val_dataset = CheXpertGraphDataset(
@@ -234,6 +293,9 @@ def get_dataloaders(
         text_field=text_field,
         max_samples=max_samples // 10 if max_samples else None,  # 10% for val
         embedding_dim=embedding_dim,
+        load_graphs=load_graphs,
+        graphs_path=graphs_path,
+        labels_path=labels_path,
     )
     
     # Create dataloaders

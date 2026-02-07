@@ -18,7 +18,7 @@ set -e  # Exit on error
 cd /home/luab/graph
 
 # Activate virtual environment
-source venv/bin/activate
+source graph/bin/activate
 
 # Check if data files exist
 if [ ! -f "reports_processed.csv" ]; then

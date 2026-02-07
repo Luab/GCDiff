@@ -1,0 +1,80 @@
+# PyRadiomics configuration optimized for Chest X-ray images
+# 
+# Key differences from default MRI config:
+# - No resampling: preserves native resolution (chest X-rays are 2D with consistent resolution)
+# - Finer LoG sigma values: captures lung texture patterns
+# - Smaller bin width: finer gray-level discrimination for subtle radiographic changes
+#
+# Reference: FRD (Fréchet Radiomic Distance) - https://arxiv.org/abs/2412.01496
+
+imageType:
+  Original: {}
+  LoG:
+    # Finer sigma values to capture lung texture and subtle patterns
+    # Values in mm - smaller sigmas for fine texture, larger for structures
+    sigma: [0.5, 1.0, 1.5, 2.0, 3.0]
+  Wavelet: {}
+
+featureClass:
+  # All first-order statistics (mean, variance, skewness, kurtosis, etc.)
+  firstorder:
+  # Gray Level Co-occurrence Matrix - texture features
+  glcm:
+    - 'Autocorrelation'
+    - 'JointAverage'
+    - 'ClusterProminence'
+    - 'ClusterShade'
+    - 'ClusterTendency'
+    - 'Contrast'
+    - 'Correlation'
+    - 'DifferenceAverage'
+    - 'DifferenceEntropy'
+    - 'DifferenceVariance'
+    - 'JointEnergy'
+    - 'JointEntropy'
+    - 'Imc1'
+    - 'Imc2'
+    - 'Idm'
+    - 'Idmn'
+    - 'Id'
+    - 'Idn'
+    - 'InverseVariance'
+    - 'MaximumProbability'
+    - 'SumEntropy'
+    - 'SumSquares'
+  # Gray Level Run Length Matrix
+  glrlm:
+  # Gray Level Size Zone Matrix
+  glszm:
+  # Neighbourhood Grey Tone Difference Matrix
+  ngtdm:
+
+setting:
+  # Normalization - helps standardize across different X-ray machines/exposures
+  normalize: true
+  normalizeScale: 100
+  
+  # NO resampling - preserve native chest X-ray resolution
+  # Chest X-rays typically have 0.1-0.2mm pixel spacing
+  # Resampling would lose fine lung texture details
+  # resampledPixelSpacing: [2, 2, 0]  # DISABLED
+  
+  # Padding for edge handling
+  padDistance: 5
+  
+  # 2D settings - chest X-rays are inherently 2D projection images
+  force2D: true
+  force2Ddimension: 0
+  
+  # Image discretization
+  # Smaller bin width for finer gray-level discrimination
+  # Important for detecting subtle changes in lung opacity, cardiac silhouette, etc.
+  binWidth: 2
+  
+  # First order specific settings
+  voxelArrayShift: 300
+  
+  # Mask label
+  label: 1
+
+

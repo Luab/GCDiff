@@ -27,7 +27,6 @@ def extract_radgraph_entities_relations(report_text: str, radgraph_model) -> Tup
     """
     # Get annotations from RadGraph
     annotations = radgraph_model([report_text])
-
     nodes = []
     edges = []
 
@@ -107,7 +106,7 @@ def process_csv_reports(input_csv: str, output_csv: str = None,
 
     # Initialize RadGraph model
     print(f"Initializing RadGraph model: {model_type}...")
-    radgraph = RadGraph(model_type=model_type)
+    radgraph = RadGraph(model_type=model_type,cuda=1)
 
     # Process each report
     graphs = []
@@ -124,11 +123,9 @@ def process_csv_reports(input_csv: str, output_csv: str = None,
             nodes_list.append([])
             edges_list.append([])
             continue
-
         try:
             # Extract entities and relations
             nodes, edges = extract_radgraph_entities_relations(report_text, radgraph)
-
             # Create NetworkX graph
             graph = create_networkx_graph(nodes, edges)
 

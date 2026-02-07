@@ -12,6 +12,13 @@ torchxrayvision>=1.2.0
 # Image quality metrics
 lpips>=0.1.4
 
+# FRD (Frechet Radiomic Distance) metrics
+SimpleITK>=2.2.0
+pyradiomics @ git+https://github.com/Radiomics/pyradiomics.git@master
+multiprocess>=0.70.0
+scipy>=1.10.0
+pandas>=2.0.0
+
 # Optional: Weights & Biases for logging
 wandb>=0.15.0  # optional
 

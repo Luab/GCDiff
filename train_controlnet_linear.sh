@@ -15,7 +15,7 @@ set -e  # Exit on error
 #export HTTPS_PROXY="http://admin:Haruhi_123@192.168.1.1:1338"
 
 # Navigate to project directory
-cd /home/luab/graph
+cd /mnt/data/graph
 
 # Activate virtual environment
 source venv/bin/activate
@@ -26,13 +26,13 @@ if [ ! -f "reports_processed.csv" ]; then
     exit 1
 fi
 
-if [ ! -f "new_embeddings_768.pkl" ]; then
+if [ ! -f "/mnt/data/diffusion_graph/new_embeddings_768.pkl" ]; then
     echo "Error: new_embeddings_768.pkl not found!"
     echo "This strategy requires original [768] embeddings."
     exit 1
 fi
 
-if [ ! -d "/mnt/data/CheXpert/PNG" ]; then
+if [ ! -d "data/PNG/PNG" ]; then
     echo "Error: CheXpert image directory not found at /mnt/data/CheXpert/PNG"
     exit 1
 fi
@@ -52,8 +52,8 @@ echo ""
 # Run training
 python train_controlnet.py \
     --csv_path reports_processed.csv \
-    --graph_embeddings new_embeddings_768.pkl \
-    --image_root /mnt/data/CheXpert/PNG \
+    --graph_embeddings /mnt/data/diffusion_graph/new_embeddings_768.pkl \
+    --image_root data/PNG/PNG \
     --output_dir checkpoints/controlnet-linear \
     --embedding_strategy linear \
     --batch_size 16 \
